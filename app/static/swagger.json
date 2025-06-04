@@ -1,0 +1,250 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "URL Alias API",
+    "description": "API для сервиса сокращения URL-адресов.",
+    "version": "1.0.0"
+  },
+  "host": "127.0.0.1:5000",
+  "basePath": "/",
+  "schemes": [
+    "http"
+  ],
+  "paths": {
+    "/shorten": {
+      "post": {
+        "summary": "Создать короткую ссылку (приватный)",
+        "description": "Создает новый короткий URL.",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "URL для сокращения и задание срока жизни.",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ShortenRequest"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Ссылка успешно создана.",
+            "schema": {
+              "$ref": "#/definitions/ShortUrlResponse"
+            }
+          },
+          "400": {
+            "description": "Некорректный запрос."
+          },
+          "401": {
+            "description": "Необходима аутентификация."
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ]
+      }
+    },
+    "/{short_code}": {
+      "get": {
+        "summary": "Перенаправить на оригинальный URL (публичный)",
+        "description": "Перенаправляет пользователя на оригинальный URL, соответствующий короткому коду.",
+        "produces": ["text/html"],
+        "parameters": [
+          {
+            "name": "short_code",
+            "in": "path",
+            "required": true,
+            "description": "Короткий код для перенаправления.",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Перенаправление на оригинальный URL."
+          },
+          "404": {
+            "description": "Короткая ссылка не найдена."
+          },
+          "410": {
+            "description": "Ссылка деактивирована или просрочена."
+          }
+        }
+      }
+    },
+    "/urls": {
+      "get": {
+        "summary": "Получить список всех ссылок (приватный)",
+        "description": "Возвращает список всех созданных коротких ссылок.",
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Номер страницы для пагинации.",
+            "type": "integer"
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "Количество элементов на странице.",
+            "type": "integer"
+          },
+          {
+            "name": "active",
+            "in": "query",
+            "description": "Фильтр по активным ссылкам (true/false).",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Список ссылок.",
+            "schema": {
+              "$ref": "#/definitions/UrlListResponse"
+            }
+          },
+          "401": {
+            "description": "Необходима аутентификация."
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ]
+      }
+    },
+    "/urls/{short_code}": {
+      "delete": {
+        "summary": "Деактивировать ссылку (приватный)",
+        "description": "Деактивирует короткую ссылку.",
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "name": "short_code",
+            "in": "path",
+            "required": true,
+            "description": "Короткий код для деактивации.",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ссылка успешно деактивирована."
+          },
+          "401": {
+            "description": "Необходима аутентификация."
+          },
+          "404": {
+            "description": "Короткая ссылка не найдена."
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ]
+      }
+    },
+    "/stats": {
+      "get": {
+        "summary": "Получить статистику по переходам (приватный)",
+        "description": "Возвращает статистику по переходам для каждой ссылки. (Сортировка по количеству переходов)",
+        "produces": ["application/json"],
+        "responses": {
+          "200": {
+            "description": "Статистика по ссылкам.",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/StatEntry"
+              }
+            }
+          },
+          "401": {
+            "description": "Необходима аутентификация."
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "securityDefinitions": {
+    "basicAuth": {
+      "type": "basic"
+    }
+  },
+  "definitions": {
+    "ShortenRequest": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string",
+          "example": "https://www.example.com/very/long/path?with=arguments"
+        },
+        "days_to_expire": {
+          "type": "integer",
+          "example": 7,
+          "description": "Опционально, по умолчанию 1 день."
+        }
+      },
+      "required": ["url"]
+    },
+    "ShortUrlResponse": {
+      "type": "object",
+      "properties": {
+        "original_url": { "type": "string" },
+        "short_code": { "type": "string" },
+        "short_url": { "type": "string" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "expires_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "UrlEntry": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "integer" },
+        "original_url": { "type": "string" },
+        "short_code": { "type": "string" },
+        "short_url": { "type": "string" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "expires_at": { "type": "string", "format": "date-time" },
+        "is_active": { "type": "boolean" },
+        "clicks": { "type": "integer" }
+      }
+    },
+    "UrlListResponse": {
+      "type": "object",
+      "properties": {
+        "urls": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/UrlEntry" }
+        },
+        "total_urls": { "type": "integer" },
+        "current_page": { "type": "integer" },
+        "total_pages": { "type": "integer" }
+      }
+    },
+    "StatEntry": {
+      "type": "object",
+      "properties": {
+        "short_code": { "type": "string" },
+        "original_url": { "type": "string" },
+        "short_url": { "type": "string" },
+        "clicks": { "type": "integer" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "expires_at": { "type": "string", "format": "date-time" },
+        "is_active": { "type": "boolean" }
+      }
+    }
+  }
+} 

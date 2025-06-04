@@ -1,0 +1,7 @@
+Flask
+Flask-SQLAlchemy
+Flask-HTTPAuth
+Flask-Swagger-UI
+Werkzeug # Для хеширования паролей
+psycopg2-binary  # Для PostgreSQL, если решим использовать его позже
+mysqlclient    # Для MySQL, если решим использовать его позже 
